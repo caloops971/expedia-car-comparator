@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Expedia Car Rental Comparator",
+  "version": "1.0",
+  "description": "Transforme les résultats de recherche de véhicules Expedia en tableau comparatif par marque et catégorie",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.expedia.com/carsearch*",
+        "*://*.expedia.fr/carsearch*",
+        "*://*.expedia.ca/carsearch*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Expedia Car Comparator"
+  }
+}
