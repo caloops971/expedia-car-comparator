@@ -655,6 +655,348 @@
     font-weight: 500;
 }
 
+/* Sélection de date améliorée */
+.date-selection {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.date-selection h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.date-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    transition: border-color 0.2s ease;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-use-current {
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.btn-use-current:hover {
+    background: #5a67d8;
+}
+
+.date-note {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+}
+
+.duration-selection {
+    margin-bottom: 20px;
+}
+
+.duration-selection h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.process-options {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.process-options h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.process-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.process-option input[type="checkbox"] {
+    margin: 0;
+}
+
+.preview-info {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 4px solid #2196f3;
+}
+
+.preview-info h4 {
+    margin: 0 0 12px 0;
+    color: #1565c0;
+    font-size: 14px;
+}
+
+.preview-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.preview-number {
+    background: #2196f3;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.preview-duration {
+    font-weight: 600;
+    color: #333;
+    min-width: 60px;
+}
+
+.preview-dates {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Interface de processus en temps réel */
+.process-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.process-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.process-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.process-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-minimize {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.btn-minimize:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.process-area {
+    background: #f8f9fa;
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.process-log {
+    flex: 1;
+}
+
+.process-log h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.log-content {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 8px;
+    height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.log-entry {
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.log-time {
+    color: #95a5a6;
+    font-size: 11px;
+    min-width: 70px;
+}
+
+.log-info { color: #3498db; }
+.log-success { color: #2ecc71; }
+.log-error { color: #e74c3c; }
+.log-process { color: #f39c12; }
+.log-url { color: #9b59b6; font-size: 11px; word-break: break-all; }
+
+.current-action {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 250px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e9ecef;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    flex-shrink: 0;
+}
+
+.results-area {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.results-area h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 18px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.results-content.sequential {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.duration-result-wrapper {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.duration-result-wrapper:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+}
+
+.duration-result-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.duration-result-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.duration-result-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.result-dates {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.result-vehicles {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.process-container.minimized .process-area {
+    display: none;
+}
+
+.process-container.minimized .results-area {
+    padding: 10px;
+}
+
 /* Interface d'extraction multiple */
 .multi-extraction-interface {
     position: fixed;

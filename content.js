@@ -13,10 +13,11 @@ class ExpediaCarComparator {
             // Si on est sur une page de recherche de véhicules
             if (this.detectExpediaCarSearchPage()) {
                 this.isExpediaCarSearch = true;
-                this.createCompareButton();
+                this.createCompareButton(); // Bouton original
+                this.createMultiExtractionButton(); // Bouton extraction multiple
                 console.log('Extension Expedia Car Comparator activée - Page de recherche détectée');
             } else {
-                // Sinon, afficher le bouton extraction multiple
+                // Sinon, afficher seulement le bouton extraction multiple
                 this.createMultiExtractionButton();
                 console.log('Extension Expedia Car Comparator activée - Site Expedia détecté');
             }
@@ -103,7 +104,7 @@ class ExpediaCarComparator {
             button.style.boxShadow = '0 4px 12px rgba(0, 102, 204, 0.3)';
         });
 
-        button.addEventListener('click', () => this.showDurationSelector());
+        button.addEventListener('click', () => this.handleCompareClick());
 
         document.body.appendChild(button);
     }
@@ -130,7 +131,7 @@ class ExpediaCarComparator {
         Object.assign(button.style, {
             position: 'fixed',
             top: '20px',
-            right: '20px',
+            right: '200px', // Décalé à gauche pour ne pas chevaucher avec le bouton original
             zIndex: '999999',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
@@ -378,42 +379,68 @@ class ExpediaCarComparator {
                 </div>
                 
                 <div class="duration-selector-body">
-                    <p class="instruction">Sélectionnez les durées de location à comparer :</p>
+                    <div class="date-selection">
+                        <h3>📅 Date de début de location</h3>
+                        <div class="date-input-group">
+                            <input type="date" id="start-date-input" class="date-input">
+                            <button id="use-current-date" class="btn-use-current">Utiliser la date actuelle</button>
+                        </div>
+                        <p class="date-note">Date actuelle détectée : <span id="current-date-display">...</span></p>
+                    </div>
                     
-                    <div class="duration-options">
-                        <label class="duration-option">
-                            <input type="checkbox" value="3" checked>
-                            <span class="duration-label">3 jours</span>
+                    <div class="duration-selection">
+                        <h3>⏱️ Durées à comparer</h3>
+                        <p class="instruction">Sélectionnez les durées de location à comparer :</p>
+                        
+                        <div class="duration-options">
+                            <label class="duration-option">
+                                <input type="checkbox" value="3" checked>
+                                <span class="duration-label">3 jours</span>
+                            </label>
+                            <label class="duration-option">
+                                <input type="checkbox" value="7" checked>
+                                <span class="duration-label">7 jours</span>
+                            </label>
+                            <label class="duration-option">
+                                <input type="checkbox" value="14">
+                                <span class="duration-label">14 jours</span>
+                            </label>
+                            <label class="duration-option">
+                                <input type="checkbox" value="21">
+                                <span class="duration-label">21 jours</span>
+                            </label>
+                            <label class="duration-option">
+                                <input type="checkbox" value="30">
+                                <span class="duration-label">30 jours</span>
+                            </label>
+                        </div>
+                        
+                        <div class="custom-duration">
+                            <label>
+                                <input type="checkbox" id="custom-duration-checkbox">
+                                Durée personnalisée : 
+                                <input type="number" id="custom-duration-input" min="1" max="365" placeholder="jours">
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="process-options">
+                        <h3>🔍 Options de traitement</h3>
+                        <label class="process-option">
+                            <input type="checkbox" id="show-process" checked>
+                            <span>Afficher le processus en temps réel (défilement, URLs, etc.)</span>
                         </label>
-                        <label class="duration-option">
-                            <input type="checkbox" value="7" checked>
-                            <span class="duration-label">7 jours</span>
-                        </label>
-                        <label class="duration-option">
-                            <input type="checkbox" value="14">
-                            <span class="duration-label">14 jours</span>
-                        </label>
-                        <label class="duration-option">
-                            <input type="checkbox" value="21">
-                            <span class="duration-label">21 jours</span>
-                        </label>
-                        <label class="duration-option">
-                            <input type="checkbox" value="30">
-                            <span class="duration-label">30 jours</span>
+                        <label class="process-option">
+                            <input type="checkbox" id="sequential-display" checked>
+                            <span>Afficher les tableaux en séquence (au lieu d'onglets)</span>
                         </label>
                     </div>
                     
-                    <div class="custom-duration">
-                        <label>
-                            <input type="checkbox" id="custom-duration-checkbox">
-                            Durée personnalisée : 
-                            <input type="number" id="custom-duration-input" min="1" max="365" placeholder="jours">
-                        </label>
-                    </div>
-                    
-                    <div class="date-info">
-                        <p>📅 Date de début : <span id="start-date-display">Extraction automatique</span></p>
-                        <p class="note">Les tableaux seront générés pour chaque durée sélectionnée</p>
+                    <div class="preview-info">
+                        <h4>📋 Aperçu de la génération</h4>
+                        <div id="generation-preview">
+                            <p>Sélectionnez les durées pour voir l'aperçu...</p>
+                        </div>
                     </div>
                 </div>
                 
@@ -498,7 +525,22 @@ class ExpediaCarComparator {
         };
     }
 
-    addDurationSelectorEvents(modal, startDate) {
+    addDurationSelectorEvents(modal, detectedStartDate) {
+        // Initialiser le champ de date avec la date détectée
+        const startDateInput = modal.querySelector('#start-date-input');
+        const currentDateDisplay = modal.querySelector('#current-date-display');
+        const useCurrentDateBtn = modal.querySelector('#use-current-date');
+        
+        // Formater la date pour l'input date (YYYY-MM-DD)
+        const dateStr = detectedStartDate.toISOString().split('T')[0];
+        startDateInput.value = dateStr;
+        currentDateDisplay.textContent = detectedStartDate.toLocaleDateString('fr-FR');
+        
+        // Bouton "Utiliser la date actuelle"
+        useCurrentDateBtn.addEventListener('click', () => {
+            startDateInput.value = dateStr;
+        });
+        
         // Fermeture du modal
         const closeBtn = modal.querySelector('#close-duration-selector');
         const cancelBtn = modal.querySelector('#cancel-duration-selector');
@@ -517,18 +559,66 @@ class ExpediaCarComparator {
             }
         });
         
+        // Mise à jour de l'aperçu quand on change les durées
+        const durationCheckboxes = modal.querySelectorAll('.duration-options input, #custom-duration-checkbox');
+        durationCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => this.updateGenerationPreview(modal));
+        });
+        
+        customInput.addEventListener('input', () => this.updateGenerationPreview(modal));
+        startDateInput.addEventListener('change', () => this.updateGenerationPreview(modal));
+        
         // Génération des tableaux
         const generateBtn = modal.querySelector('#generate-multi-tables');
         generateBtn.addEventListener('click', () => {
+            const selectedStartDate = new Date(startDateInput.value);
             const selectedDurations = this.getSelectedDurations(modal);
+            const showProcess = modal.querySelector('#show-process').checked;
+            const sequentialDisplay = modal.querySelector('#sequential-display').checked;
+            
             if (selectedDurations.length === 0) {
                 alert('Veuillez sélectionner au moins une durée');
                 return;
             }
             
             modal.remove();
-            this.generateMultipleComparisons(startDate, selectedDurations);
+            this.generateMultipleComparisonsWithProcess(selectedStartDate, selectedDurations, showProcess, sequentialDisplay);
         });
+        
+        // Initialiser l'aperçu
+        this.updateGenerationPreview(modal);
+    }
+
+    updateGenerationPreview(modal) {
+        const startDateInput = modal.querySelector('#start-date-input');
+        const selectedDurations = this.getSelectedDurations(modal);
+        const previewDiv = modal.querySelector('#generation-preview');
+        
+        if (selectedDurations.length === 0) {
+            previewDiv.innerHTML = '<p>Sélectionnez les durées pour voir l\'aperçu...</p>';
+            return;
+        }
+        
+        const startDate = new Date(startDateInput.value);
+        let previewHtml = '<div class="preview-list">';
+        
+        selectedDurations.forEach((duration, index) => {
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + duration);
+            
+            previewHtml += `
+                <div class="preview-item">
+                    <span class="preview-number">${index + 1}</span>
+                    <span class="preview-duration">${duration} jour${duration > 1 ? 's' : ''}</span>
+                    <span class="preview-dates">
+                        ${startDate.toLocaleDateString('fr-FR')} → ${endDate.toLocaleDateString('fr-FR')}
+                    </span>
+                </div>
+            `;
+        });
+        
+        previewHtml += '</div>';
+        previewDiv.innerHTML = previewHtml;
     }
 
     getSelectedDurations(modal) {
@@ -554,33 +644,87 @@ class ExpediaCarComparator {
         return durations.sort((a, b) => a - b);
     }
 
-    async generateMultipleComparisons(startDate, durations) {
-        // Créer le conteneur pour les multiples tableaux
-        const multiTableContainer = document.createElement('div');
-        multiTableContainer.id = 'multi-table-container';
-        multiTableContainer.className = 'multi-table-container';
+    async generateMultipleComparisonsWithProcess(startDate, durations, showProcess, sequentialDisplay) {
+        // Créer le conteneur principal
+        const processContainer = document.createElement('div');
+        processContainer.id = 'process-container';
+        processContainer.className = 'process-container';
         
         const header = document.createElement('div');
-        header.className = 'multi-table-header';
+        header.className = 'process-header';
         header.innerHTML = `
-            <h2>📊 Comparaison Multi-Durées</h2>
-            <div class="multi-table-controls">
-                <button id="print-all-tables" class="btn-print">🖨️ Imprimer Tout</button>
-                <button id="close-multi-tables" class="btn-close">✕</button>
+            <h2>🔄 Génération en cours - Comparaison Multi-Durées</h2>
+            <div class="process-controls">
+                <button id="minimize-process" class="btn-minimize" title="Réduire">📐</button>
+                <button id="close-process" class="btn-close">✕</button>
             </div>
         `;
         
-        multiTableContainer.appendChild(header);
+        processContainer.appendChild(header);
         
-        // Créer les onglets
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'tabs-container';
+        // Zone de processus en temps réel
+        if (showProcess) {
+            const processArea = document.createElement('div');
+            processArea.className = 'process-area';
+            processArea.innerHTML = `
+                <div class="process-log">
+                    <h3>📋 Processus en temps réel</h3>
+                    <div id="process-log-content" class="log-content">
+                        <p class="log-entry">🚀 Début de la génération...</p>
+                    </div>
+                </div>
+                <div class="current-action">
+                    <div class="action-spinner"></div>
+                    <span id="current-action-text">Initialisation...</span>
+                </div>
+            `;
+            processContainer.appendChild(processArea);
+        }
         
-        const tabsList = document.createElement('div');
-        tabsList.className = 'tabs-list';
+        // Zone des résultats
+        const resultsArea = document.createElement('div');
+        resultsArea.className = 'results-area';
+        resultsArea.innerHTML = `
+            <h3>📊 Tableaux Comparatifs</h3>
+            <div id="results-content" class="results-content ${sequentialDisplay ? 'sequential' : 'tabbed'}">
+                <!-- Les tableaux apparaîtront ici -->
+            </div>
+        `;
         
-        const tabsContent = document.createElement('div');
-        tabsContent.className = 'tabs-content';
+        processContainer.appendChild(resultsArea);
+        document.body.appendChild(processContainer);
+        
+        // Ajouter les événements
+        this.addProcessContainerEvents(processContainer);
+        
+        // Générer les tableaux avec processus visible
+        await this.generateTablesWithRealTimeProcess(startDate, durations, showProcess, sequentialDisplay);
+    }
+
+    async generateTablesWithRealTimeProcess(startDate, durations, showProcess, sequentialDisplay) {
+        const logContent = document.getElementById('process-log-content');
+        const currentActionText = document.getElementById('current-action-text');
+        const resultsContent = document.getElementById('results-content');
+        
+        const addLogEntry = (message, type = 'info') => {
+            if (showProcess && logContent) {
+                const entry = document.createElement('p');
+                entry.className = `log-entry log-${type}`;
+                entry.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString('fr-FR')}</span> ${message}`;
+                logContent.appendChild(entry);
+                logContent.scrollTop = logContent.scrollHeight;
+            }
+        };
+        
+        const updateCurrentAction = (action) => {
+            if (currentActionText) {
+                currentActionText.textContent = action;
+            }
+        };
+        
+        addLogEntry(`📅 Date de début : ${startDate.toLocaleDateString('fr-FR')}`, 'info');
+        addLogEntry(`⏱️ Durées sélectionnées : ${durations.join(', ')} jours`, 'info');
+        addLogEntry(`🔄 Mode d'affichage : ${sequentialDisplay ? 'Séquentiel' : 'Onglets'}`, 'info');
         
         // Générer un tableau pour chaque durée
         for (let i = 0; i < durations.length; i++) {
@@ -588,40 +732,97 @@ class ExpediaCarComparator {
             const endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + duration);
             
-            // Créer l'onglet
-            const tab = document.createElement('button');
-            tab.className = `tab ${i === 0 ? 'active' : ''}`;
-            tab.textContent = `${duration} jour${duration > 1 ? 's' : ''}`;
-            tab.dataset.duration = duration;
-            tabsList.appendChild(tab);
+            addLogEntry(`🚗 Génération pour ${duration} jour${duration > 1 ? 's' : ''} (${startDate.toLocaleDateString('fr-FR')} → ${endDate.toLocaleDateString('fr-FR')})`, 'info');
+            updateCurrentAction(`Traitement ${duration} jour${duration > 1 ? 's' : ''} - ${i + 1}/${durations.length}`);
             
-            // Créer le contenu de l'onglet
-            const tabContent = document.createElement('div');
-            tabContent.className = `tab-content ${i === 0 ? 'active' : ''}`;
-            tabContent.dataset.duration = duration;
-            tabContent.innerHTML = `
-                <div class="loading-message">
-                    <div class="spinner"></div>
-                    <p>Génération du tableau pour ${duration} jour${duration > 1 ? 's' : ''}...</p>
-                </div>
-            `;
-            tabsContent.appendChild(tabContent);
+            try {
+                // Simuler la navigation vers une nouvelle URL (pour la démo)
+                const newUrl = this.constructSearchUrl(startDate, endDate);
+                addLogEntry(`🌐 URL générée : ${newUrl}`, 'url');
+                
+                // Simuler le défilement et l'extraction
+                addLogEntry(`📜 Défilement de la page...`, 'process');
+                await this.sleep(500);
+                
+                addLogEntry(`🔍 Extraction des données...`, 'process');
+                await this.sleep(1000);
+                
+                // Utiliser les données actuelles pour cette démo
+                const tableData = this.organizeForSimpleTable();
+                
+                // Créer le tableau pour cette durée
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'duration-result-wrapper';
+                tableWrapper.innerHTML = `
+                    <div class="duration-result-header">
+                        <h3>📊 ${duration} jour${duration > 1 ? 's' : ''}</h3>
+                        <div class="duration-result-info">
+                            <span class="result-dates">${startDate.toLocaleDateString('fr-FR')} → ${endDate.toLocaleDateString('fr-FR')}</span>
+                            <span class="result-vehicles">${tableData.companies.length} loueurs • ${Object.keys(tableData.prices).reduce((total, company) => total + Object.keys(tableData.prices[company]).length, 0)} offres</span>
+                        </div>
+                    </div>
+                    ${this.createSimpleTableContent(tableData)}
+                `;
+                
+                resultsContent.appendChild(tableWrapper);
+                
+                // Mettre en évidence les meilleurs prix
+                const table = tableWrapper.querySelector('.simple-comparison-table');
+                if (table) {
+                    this.highlightBestPrices(table, tableData.categories);
+                }
+                
+                addLogEntry(`✅ Tableau généré avec succès pour ${duration} jour${duration > 1 ? 's' : ''}`, 'success');
+                
+                // Défiler vers le nouveau tableau
+                tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+            } catch (error) {
+                addLogEntry(`❌ Erreur pour ${duration} jour${duration > 1 ? 's' : ''} : ${error.message}`, 'error');
+                console.error(`Erreur génération ${duration} jours:`, error);
+            }
+            
+            // Pause entre les générations
+            if (i < durations.length - 1) {
+                await this.sleep(1000);
+            }
         }
         
-        tabsContainer.appendChild(tabsList);
-        tabsContainer.appendChild(tabsContent);
-        multiTableContainer.appendChild(tabsContainer);
+        updateCurrentAction('✅ Génération terminée');
+        addLogEntry(`🎉 Tous les tableaux ont été générés avec succès !`, 'success');
         
-        document.body.appendChild(multiTableContainer);
-        
-        // Ajouter les événements pour les onglets et contrôles
-        this.addMultiTableEvents(multiTableContainer);
-        
-        // Générer les tableaux un par un
-        for (let i = 0; i < durations.length; i++) {
-            const duration = durations[i];
-            await this.generateSingleComparison(startDate, duration, i === 0);
+        // Défiler vers le premier tableau après génération
+        const firstTable = resultsContent.querySelector('.duration-result-wrapper');
+        if (firstTable) {
+            setTimeout(() => {
+                firstTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
         }
+    }
+
+    constructSearchUrl(startDate, endDate) {
+        const baseUrl = window.location.origin + window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Mettre à jour les dates dans les paramètres
+        urlParams.set('date1', startDate.toISOString().split('T')[0]);
+        urlParams.set('date2', endDate.toISOString().split('T')[0]);
+        
+        return `${baseUrl}?${urlParams.toString()}`;
+    }
+
+    addProcessContainerEvents(container) {
+        // Bouton fermeture
+        const closeBtn = container.querySelector('#close-process');
+        closeBtn.addEventListener('click', () => {
+            container.remove();
+        });
+        
+        // Bouton minimiser (optionnel)
+        const minimizeBtn = container.querySelector('#minimize-process');
+        minimizeBtn.addEventListener('click', () => {
+            container.classList.toggle('minimized');
+        });
     }
 
     async handleCompareClick() {
