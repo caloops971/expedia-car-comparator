@@ -175,11 +175,11 @@ class ExpediaCarComparator {
         }
 
         // Créer l'interface d'extraction multiple
-        const interface = document.createElement('div');
-        interface.id = 'multi-extraction-interface';
-        interface.className = 'multi-extraction-interface';
+        const interfaceElement = document.createElement('div');
+        interfaceElement.id = 'multi-extraction-interface';
+        interfaceElement.className = 'multi-extraction-interface';
         
-        interface.innerHTML = `
+        interfaceElement.innerHTML = `
             <div class="multi-extraction-content">
                 <div class="multi-extraction-header">
                     <h2>🔍 Extraction Multiple - Expedia Car Comparator</h2>
@@ -248,13 +248,13 @@ class ExpediaCarComparator {
             </div>
         `;
         
-        document.body.appendChild(interface);
+        document.body.appendChild(interfaceElement);
         
         // Détecter la localisation
         this.detectCurrentLocation();
         
         // Ajouter les événements
-        this.addMultiExtractionEvents(interface);
+        this.addMultiExtractionEvents(interfaceElement);
     }
 
     isOnCarSearchPage() {
@@ -297,36 +297,36 @@ class ExpediaCarComparator {
         return location;
     }
 
-    addMultiExtractionEvents(interface) {
+    addMultiExtractionEvents(interfaceElement) {
         // Fermeture de l'interface
-        const closeBtn = interface.querySelector('#close-multi-extraction');
+        const closeBtn = interfaceElement.querySelector('#close-multi-extraction');
         closeBtn.addEventListener('click', () => {
-            interface.remove();
+            interfaceElement.remove();
         });
         
         // Gestion des modes d'extraction
-        const modeButtons = interface.querySelectorAll('.mode-button');
+        const modeButtons = interfaceElement.querySelectorAll('.mode-button');
         modeButtons.forEach(button => {
             if (!button.disabled) {
                 button.addEventListener('click', (e) => {
                     const mode = e.target.closest('.extraction-mode').dataset.mode;
-                    this.handleExtractionMode(mode, interface);
+                    this.handleExtractionMode(mode, interfaceElement);
                 });
             }
         });
         
         // Fermeture en cliquant à l'extérieur
-        interface.addEventListener('click', (e) => {
-            if (e.target === interface) {
-                interface.remove();
+        interfaceElement.addEventListener('click', (e) => {
+            if (e.target === interfaceElement) {
+                interfaceElement.remove();
             }
         });
     }
 
-    handleExtractionMode(mode, interface) {
+    handleExtractionMode(mode, interfaceElement) {
         switch (mode) {
             case 'current-search':
-                interface.remove();
+                interfaceElement.remove();
                 if (this.isOnCarSearchPage()) {
                     this.showDurationSelector();
                 } else {
@@ -335,12 +335,12 @@ class ExpediaCarComparator {
                 break;
                 
             case 'multi-duration':
-                interface.remove();
+                interfaceElement.remove();
                 this.showCustomDurationSelector();
                 break;
                 
             case 'custom-search':
-                interface.remove();
+                interfaceElement.remove();
                 this.showCustomSearchInterface();
                 break;
                 
