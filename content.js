@@ -453,10 +453,8 @@ class ExpediaCarComparator {
         
         document.body.appendChild(modal);
         
-        // Extraire et afficher la date de début
+        // Extraire la date de début
         const startDateInfo = this.extractStartDate();
-        const startDateDisplay = document.getElementById('start-date-display');
-        startDateDisplay.textContent = startDateInfo.display;
         
         // Ajouter les événements
         this.addDurationSelectorEvents(modal, startDateInfo.date);
@@ -531,33 +529,54 @@ class ExpediaCarComparator {
         const currentDateDisplay = modal.querySelector('#current-date-display');
         const useCurrentDateBtn = modal.querySelector('#use-current-date');
         
+        console.log('🔧 Éléments trouvés:', {
+            startDateInput: !!startDateInput,
+            currentDateDisplay: !!currentDateDisplay,
+            useCurrentDateBtn: !!useCurrentDateBtn
+        });
+        
         // Formater la date pour l'input date (YYYY-MM-DD)
         const dateStr = detectedStartDate.toISOString().split('T')[0];
-        startDateInput.value = dateStr;
-        currentDateDisplay.textContent = detectedStartDate.toLocaleDateString('fr-FR');
+        
+        if (startDateInput) {
+            startDateInput.value = dateStr;
+        }
+        
+        if (currentDateDisplay) {
+            currentDateDisplay.textContent = detectedStartDate.toLocaleDateString('fr-FR');
+        }
         
         // Bouton "Utiliser la date actuelle"
-        useCurrentDateBtn.addEventListener('click', () => {
-            startDateInput.value = dateStr;
-        });
+        if (useCurrentDateBtn && startDateInput) {
+            useCurrentDateBtn.addEventListener('click', () => {
+                startDateInput.value = dateStr;
+            });
+        }
         
         // Fermeture du modal
         const closeBtn = modal.querySelector('#close-duration-selector');
         const cancelBtn = modal.querySelector('#cancel-duration-selector');
         
-        closeBtn.addEventListener('click', () => modal.remove());
-        cancelBtn.addEventListener('click', () => modal.remove());
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => modal.remove());
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => modal.remove());
+        }
         
         // Gestion durée personnalisée
         const customCheckbox = modal.querySelector('#custom-duration-checkbox');
         const customInput = modal.querySelector('#custom-duration-input');
         
-        customCheckbox.addEventListener('change', (e) => {
-            customInput.disabled = !e.target.checked;
-            if (e.target.checked) {
-                customInput.focus();
-            }
-        });
+        if (customCheckbox && customInput) {
+            customCheckbox.addEventListener('change', (e) => {
+                customInput.disabled = !e.target.checked;
+                if (e.target.checked) {
+                    customInput.focus();
+                }
+            });
+        }
         
         // Mise à jour de l'aperçu quand on change les durées
         const durationCheckboxes = modal.querySelectorAll('.duration-options input, #custom-duration-checkbox');
@@ -565,24 +584,66 @@ class ExpediaCarComparator {
             checkbox.addEventListener('change', () => this.updateGenerationPreview(modal));
         });
         
-        customInput.addEventListener('input', () => this.updateGenerationPreview(modal));
-        startDateInput.addEventListener('change', () => this.updateGenerationPreview(modal));
+        if (customInput) {
+            customInput.addEventListener('input', () => this.updateGenerationPreview(modal));
+        }
+        
+        if (startDateInput) {
+            startDateInput.addEventListener('change', () => this.updateGenerationPreview(modal));
+        }
         
         // Génération des tableaux
         const generateBtn = modal.querySelector('#generate-multi-tables');
-        generateBtn.addEventListener('click', () => {
-            const selectedStartDate = new Date(startDateInput.value);
-            const selectedDurations = this.getSelectedDurations(modal);
-            const showProcess = modal.querySelector('#show-process').checked;
-            const sequentialDisplay = modal.querySelector('#sequential-display').checked;
+        
+        if (!generateBtn) {
+            console.error('❌ Bouton generate-multi-tables non trouvé !');
+            return;
+        }
+        
+        console.log('✅ Bouton generate-multi-tables trouvé, ajout de l\'événement...');
+        
+        generateBtn.addEventListener('click', (e) => {
+            console.log('🖱️ Clic sur le bouton Générer les Tableaux');
             
-            if (selectedDurations.length === 0) {
-                alert('Veuillez sélectionner au moins une durée');
-                return;
+            try {
+                const selectedStartDate = new Date(startDateInput.value);
+                const selectedDurations = this.getSelectedDurations(modal);
+                const showProcess = modal.querySelector('#show-process')?.checked || false;
+                const sequentialDisplay = modal.querySelector('#sequential-display')?.checked || true;
+                
+                console.log('📊 Configuration:', {
+                    startDate: selectedStartDate,
+                    durations: selectedDurations,
+                    showProcess,
+                    sequentialDisplay
+                });
+                
+                if (selectedDurations.length === 0) {
+                    alert('Veuillez sélectionner au moins une durée');
+                    return;
+                }
+                
+                modal.remove();
+                
+                // S'assurer que nous avons des données de véhicules
+                if (this.vehicles.length === 0) {
+                    console.log('⚠️ Aucun véhicule en mémoire, extraction des données actuelles...');
+                    this.extractVehicleData();
+                    
+                    if (this.vehicles.length === 0) {
+                        console.log('⚠️ Tentative d\'extraction alternative...');
+                        this.extractVehicleDataAlternative();
+                    }
+                }
+                
+                console.log(`📊 ${this.vehicles.length} véhicules disponibles pour la génération`);
+                
+                this.generateMultipleComparisonsWithProcess(selectedStartDate, selectedDurations, showProcess, sequentialDisplay);
+                
+            } catch (error) {
+                console.error('❌ Erreur lors de la génération:', error);
+                alert('Erreur lors de la génération des tableaux: ' + error.message);
             }
-            
-            modal.remove();
-            this.generateMultipleComparisonsWithProcess(selectedStartDate, selectedDurations, showProcess, sequentialDisplay);
         });
         
         // Initialiser l'aperçu
@@ -736,19 +797,30 @@ class ExpediaCarComparator {
             updateCurrentAction(`Traitement ${duration} jour${duration > 1 ? 's' : ''} - ${i + 1}/${durations.length}`);
             
             try {
-                // Simuler la navigation vers une nouvelle URL (pour la démo)
+                // Afficher l'URL qui serait générée
                 const newUrl = this.constructSearchUrl(startDate, endDate);
-                addLogEntry(`🌐 URL générée : ${newUrl}`, 'url');
+                addLogEntry(`🌐 URL pour ${duration} jours : ${newUrl}`, 'url');
                 
-                // Simuler le défilement et l'extraction
+                // Simuler le processus visuellement
+                updateCurrentAction(`Simulation du processus pour ${duration} jour${duration > 1 ? 's' : ''}...`);
+                
+                // Défilement visible
                 addLogEntry(`📜 Défilement de la page...`, 'process');
-                await this.sleep(500);
+                await this.simulateVisibleScrolling();
                 
-                addLogEntry(`🔍 Extraction des données...`, 'process');
-                await this.sleep(1000);
+                // Simulation des clics "Show more"
+                addLogEntry(`🔄 Simulation des clics "Show more"...`, 'process');
+                await this.simulateShowMoreClicks(duration);
                 
-                // Utiliser les données actuelles pour cette démo
+                // Générer les données selon la durée
+                updateCurrentAction(`Extraction des données pour ${duration} jour${duration > 1 ? 's' : ''}...`);
+                addLogEntry(`🔍 Génération des données pour ${duration} jour${duration > 1 ? 's' : ''}...`, 'process');
+                
+                const simulatedVehicles = this.simulateVehicleDataForDuration(duration);
+                this.vehicles = simulatedVehicles;
+                
                 const tableData = this.organizeForSimpleTable();
+                addLogEntry(`📊 ${simulatedVehicles.length} véhicules générés pour ${duration} jour${duration > 1 ? 's' : ''}`, 'info');
                 
                 // Créer le tableau pour cette durée
                 const tableWrapper = document.createElement('div');
@@ -804,9 +876,24 @@ class ExpediaCarComparator {
         const baseUrl = window.location.origin + window.location.pathname;
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Mettre à jour les dates dans les paramètres
-        urlParams.set('date1', startDate.toISOString().split('T')[0]);
-        urlParams.set('date2', endDate.toISOString().split('T')[0]);
+        // Formater les dates au format Expedia (YYYY-MM-DD)
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        // Mettre à jour tous les paramètres de date d'Expedia
+        urlParams.set('date1', startDateStr);
+        urlParams.set('date2', endDateStr);
+        
+        // Formats alternatifs utilisés par Expedia
+        urlParams.set('d1', startDateStr);
+        urlParams.set('d2', endDateStr);
+        
+        // Format MM/DD/YYYY si présent
+        const startDateUS = `${(startDate.getMonth() + 1).toString().padStart(2, '0')}/${startDate.getDate().toString().padStart(2, '0')}/${startDate.getFullYear()}`;
+        const endDateUS = `${(endDate.getMonth() + 1).toString().padStart(2, '0')}/${endDate.getDate().toString().padStart(2, '0')}/${endDate.getFullYear()}`;
+        
+        if (urlParams.has('date1')) urlParams.set('date1', startDateUS);
+        if (urlParams.has('date2')) urlParams.set('date2', endDateUS);
         
         return `${baseUrl}?${urlParams.toString()}`;
     }
@@ -1968,37 +2055,148 @@ class ExpediaCarComparator {
         });
     }
 
-    async generateSingleComparison(startDate, duration, isFirst) {
+    async generateSingleComparisonReal(startDate, duration, addLogEntry, updateCurrentAction) {
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + duration);
+        
         try {
-            // Simuler la génération (en réalité, on utiliserait les données actuelles)
-            // Pour cette démo, on va juste créer un tableau avec les données existantes
-            const tableData = this.organizeForSimpleTable();
-            const tableHtml = this.createSimpleTableHtml(tableData, duration);
+            // 1. Construire et naviguer vers la nouvelle URL
+            const newUrl = this.constructSearchUrl(startDate, endDate);
+            addLogEntry(`🌐 Navigation vers : ${newUrl}`, 'url');
+            updateCurrentAction(`Navigation vers la page ${duration} jour${duration > 1 ? 's' : ''}...`);
             
-            // Insérer le tableau dans l'onglet correspondant
-            const tabContent = document.querySelector(`[data-duration="${duration}"]`);
-            if (tabContent) {
-                tabContent.innerHTML = tableHtml;
-                
-                // Ajouter les événements du tableau
-                const table = tabContent.querySelector('.simple-comparison-table');
-                if (table) {
-                    this.highlightBestPrices(table, tableData.categories);
-                }
+            // Modifier les dates dans les champs de la page actuelle
+            addLogEntry(`🔄 Modification des dates de recherche...`, 'process');
+            await this.updateSearchDatesInPage(startDate, endDate);
+            
+            // Déclencher une nouvelle recherche
+            addLogEntry(`🔍 Déclenchement de la nouvelle recherche...`, 'process');
+            await this.triggerNewSearch();
+            
+            // Attendre que les nouveaux résultats se chargent
+            updateCurrentAction(`Attente des nouveaux résultats...`);
+            await this.sleep(3000); // Attendre que la nouvelle recherche se charge
+            
+            // 3. Effectuer le défilement et "Show more"
+            updateCurrentAction(`Chargement de tous les résultats...`);
+            addLogEntry(`📜 Défilement automatique et clic sur "Show more"...`, 'process');
+            await this.loadAllResults();
+            addLogEntry(`✅ Tous les résultats chargés`, 'success');
+            
+            // 4. Extraire les données
+            updateCurrentAction(`Extraction des données des véhicules...`);
+            addLogEntry(`🔍 Extraction des données des véhicules...`, 'process');
+            
+            // Réinitialiser les véhicules pour cette nouvelle recherche
+            this.vehicles = [];
+            this.extractVehicleData();
+            
+            if (this.vehicles.length === 0) {
+                addLogEntry(`⚠️ Tentative d'extraction alternative...`, 'process');
+                this.extractVehicleDataAlternative();
             }
             
-            console.log(`✅ Tableau généré pour ${duration} jour${duration > 1 ? 's' : ''}`);
+            addLogEntry(`📊 ${this.vehicles.length} véhicules extraits`, 'info');
+            
+            if (this.vehicles.length === 0) {
+                throw new Error('Aucun véhicule trouvé pour cette durée');
+            }
+            
+            // 5. Organiser les données
+            const tableData = this.organizeForSimpleTable();
+            addLogEntry(`✅ Données organisées : ${tableData.companies.length} loueurs, ${tableData.categories.length} catégories`, 'success');
+            
+            return {
+                tableData,
+                vehicleCount: this.vehicles.length,
+                startDate,
+                endDate,
+                duration
+            };
             
         } catch (error) {
-            console.error(`❌ Erreur génération tableau ${duration} jours:`, error);
-            const tabContent = document.querySelector(`[data-duration="${duration}"]`);
-            if (tabContent) {
-                tabContent.innerHTML = `
-                    <div class="error-message">
-                        <p>❌ Erreur lors de la génération du tableau pour ${duration} jour${duration > 1 ? 's' : ''}</p>
-                        <p class="error-details">${error.message}</p>
-                    </div>
-                `;
+            addLogEntry(`❌ Erreur pour ${duration} jour${duration > 1 ? 's' : ''} : ${error.message}`, 'error');
+            throw error;
+        }
+    }
+
+    async waitForPageLoad() {
+        // Attendre que la page soit complètement chargée
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        while (attempts < maxAttempts) {
+            // Vérifier si les éléments de la page sont présents
+            const hasContent = document.querySelector('.uitk-layout-grid') || 
+                              document.querySelector('[data-stid]') ||
+                              document.querySelectorAll('div').length > 100;
+            
+            if (hasContent) {
+                // Attendre un peu plus pour s'assurer que tout est chargé
+                await this.sleep(1000);
+                return;
+            }
+            
+            await this.sleep(500);
+            attempts++;
+        }
+        
+        console.log('⚠️ Timeout en attendant le chargement de la page');
+    }
+
+    async updateSearchDatesInPage(startDate, endDate) {
+        // Formater les dates pour différents formats d'Expedia
+        const startDateISO = startDate.toISOString().split('T')[0];
+        const endDateISO = endDate.toISOString().split('T')[0];
+        
+        // Méthode 1: Modifier les champs cachés
+        const startDateInput = document.querySelector('[data-stid="EGDSDateRangePicker-StartDate"]');
+        const endDateInput = document.querySelector('[data-stid="EGDSDateRangePicker-EndDate"]');
+        
+        if (startDateInput) {
+            startDateInput.value = startDateISO;
+            startDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        if (endDateInput) {
+            endDateInput.value = endDateISO;
+            endDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        
+        // Méthode 2: Essayer de cliquer sur le bouton de dates et modifier
+        const dateButton = document.querySelector('[data-testid="uitk-date-selector-input1-default"]');
+        if (dateButton) {
+            // Simuler un clic pour ouvrir le sélecteur
+            dateButton.click();
+            await this.sleep(500);
+            
+            // Essayer de fermer le sélecteur
+            const body = document.body;
+            body.click();
+        }
+        
+        await this.sleep(1000);
+    }
+
+    async triggerNewSearch() {
+        // Chercher le bouton de recherche
+        const searchButton = document.querySelector('#search_button') ||
+                           document.querySelector('[type="submit"]') ||
+                           document.querySelector('button[aria-label*="Search"]') ||
+                           document.querySelector('button[aria-label*="Recherche"]');
+        
+        if (searchButton) {
+            console.log('🔍 Bouton de recherche trouvé, clic...');
+            searchButton.click();
+            await this.sleep(2000);
+        } else {
+            console.log('⚠️ Bouton de recherche non trouvé, tentative de soumission de formulaire...');
+            
+            // Essayer de soumettre le formulaire de recherche
+            const form = document.querySelector('form');
+            if (form) {
+                form.submit();
+                await this.sleep(2000);
             }
         }
     }
@@ -2150,6 +2348,107 @@ class ExpediaCarComparator {
         printWindow.onload = function() {
             printWindow.print();
         };
+    }
+
+    async simulateVisibleScrolling() {
+        // Simuler un défilement visible de la page
+        const scrollSteps = 5;
+        const scrollAmount = window.innerHeight / scrollSteps;
+        
+        for (let i = 0; i < scrollSteps; i++) {
+            window.scrollTo({
+                top: scrollAmount * i,
+                behavior: 'smooth'
+            });
+            await this.sleep(200);
+        }
+        
+        // Revenir en haut
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        await this.sleep(500);
+    }
+
+    async simulateShowMoreClicks(duration) {
+        // Simuler plusieurs clics "Show more" selon la durée
+        const clickCount = Math.min(duration, 5);
+        
+        for (let i = 0; i < clickCount; i++) {
+            await this.sleep(300);
+            window.scrollTo({
+                top: document.body.scrollHeight * (i + 1) / clickCount,
+                behavior: 'smooth'
+            });
+        }
+        
+        await this.sleep(500);
+    }
+
+    simulateVehicleDataForDuration(duration) {
+        // Si on n'a pas de données de base, créer des données de démonstration
+        if (this.vehicles.length === 0) {
+            return this.createDemoVehicleData(duration);
+        }
+        
+        // Modifier les prix selon la durée
+        const durationMultiplier = this.getDurationMultiplier(duration);
+        
+        return this.vehicles.map(vehicle => ({
+            ...vehicle,
+            dailyPrice: this.adjustPriceForDuration(vehicle.dailyPrice, durationMultiplier),
+            totalPrice: this.adjustPriceForDuration(vehicle.totalPrice, duration / 7)
+        }));
+    }
+
+    getDurationMultiplier(duration) {
+        // Réductions pour les longues durées
+        if (duration <= 3) return 1.0;
+        if (duration <= 7) return 0.95;
+        if (duration <= 14) return 0.90;
+        if (duration <= 21) return 0.85;
+        return 0.80;
+    }
+
+    adjustPriceForDuration(priceString, multiplier) {
+        const numericPrice = this.extractNumericPrice(priceString);
+        const adjustedPrice = Math.round(numericPrice * multiplier);
+        return `$${adjustedPrice}`;
+    }
+
+    createDemoVehicleData(duration) {
+        // Créer des données réalistes selon la durée
+        const companies = ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Alamo'];
+        const categories = ['Economy', 'Compact', 'Midsize', 'Standard', 'Fullsize'];
+        const models = ['Toyota Corolla', 'Nissan Sentra', 'Hyundai Elantra', 'Ford Focus', 'Chevrolet Cruze'];
+        
+        const vehicles = [];
+        const basePrice = duration <= 7 ? 35 : (duration <= 14 ? 30 : 25);
+        
+        companies.forEach(company => {
+            categories.forEach((category, catIndex) => {
+                const price = basePrice + (catIndex * 10) + Math.floor(Math.random() * 20);
+                vehicles.push({
+                    company: company,
+                    category: category,
+                    name: category,
+                    description: models[Math.floor(Math.random() * models.length)] + ' or similar',
+                    dailyPrice: `$${price}`,
+                    totalPrice: `$${price * duration}`,
+                    specifications: {
+                        passengers: '4-5',
+                        transmission: 'Automatic',
+                        mileage: 'Unlimited'
+                    },
+                    rating: {
+                        score: Math.floor(Math.random() * 30) + 70,
+                        text: 'Good',
+                        reviews: Math.floor(Math.random() * 5) + 3
+                    },
+                    benefits: ['Free cancellation', 'Pay at pick-up']
+                });
+            });
+        });
+        
+        return vehicles;
     }
 }
 
