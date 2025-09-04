@@ -13,13 +13,9 @@ class ExpediaCarComparator {
             // Si on est sur une page de recherche de véhicules
             if (this.detectExpediaCarSearchPage()) {
                 this.isExpediaCarSearch = true;
-                this.createCompareButton(); // Bouton original
-                this.createMultiExtractionButton(); // Bouton extraction multiple
+                // Afficher seulement le bouton original qui fonctionne bien
+                this.createCompareButton();
                 console.log('Extension Expedia Car Comparator activée - Page de recherche détectée');
-            } else {
-                // Sinon, afficher seulement le bouton extraction multiple
-                this.createMultiExtractionButton();
-                console.log('Extension Expedia Car Comparator activée - Site Expedia détecté');
             }
         }
     }
@@ -329,7 +325,8 @@ class ExpediaCarComparator {
             case 'current-search':
                 interfaceElement.remove();
                 if (this.isOnCarSearchPage()) {
-                    this.showDurationSelector();
+                    // Appeler directement la création du tableau comme l'ancien bouton
+                    this.handleCompareClick();
                 } else {
                     alert('Veuillez d\'abord effectuer une recherche de véhicules sur Expedia');
                 }
