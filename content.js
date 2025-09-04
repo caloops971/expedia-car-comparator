@@ -39,14 +39,27 @@ class ExpediaCarComparator {
         const isCarSearchUrl = window.location.pathname.includes('/carsearch') || 
                               window.location.href.includes('carsearch');
         
-        // Vérifier la présence d'éléments spécifiques aux résultats de véhicules
+        // Vérifier la présence d'éléments spécifiques aux résultats de véhicules (sélecteurs mis à jour)
         const hasCarResults = document.querySelector('[data-stid="property-listing-results"]') ||
-                             document.querySelector('[data-stid="lodging-card-responsive"]');
+                             document.querySelector('[data-stid="lodging-card-responsive"]') ||
+                             document.querySelector('[data-testid="listing"]') ||
+                             document.querySelector('.uitk-card') ||
+                             document.querySelector('[class*="car"]');
         
         const hasCarFilters = document.querySelector('[data-stid="selCC"]') || // Car type filters
-                             document.querySelector('[data-stid="selVen"]'); // Vendor filters
+                             document.querySelector('[data-stid="selVen"]') || // Vendor filters
+                             document.querySelector('[data-testid="filter"]') ||
+                             document.querySelector('[class*="filter"]');
 
-        return isCarSearchUrl && (hasCarResults || hasCarFilters);
+        // Si on a l'URL correcte, on considère que c'est une page de recherche de voitures
+        console.log('🔍 Détection page voiture:', {
+            isCarSearchUrl,
+            hasCarResults: !!hasCarResults,
+            hasCarFilters: !!hasCarFilters,
+            url: window.location.href
+        });
+
+        return isCarSearchUrl; // Simplifié pour être plus permissif
     }
 
     createCompareButton() {
@@ -1112,17 +1125,67 @@ class ExpediaCarComparator {
         const descElement = card.querySelector('.uitk-text.uitk-text-spacing-half.truncate-lines-3');
         const description = descElement ? descElement.textContent.trim() : '';
 
-        // Extraire le prix quotidien
-        const dailyPriceElement = card.querySelector('[data-test-id="price-summary"] .uitk-text.uitk-type-500');
+        // Extraire le prix quotidien (sélecteurs mis à jour pour 2024)
+        let dailyPriceElement = card.querySelector('[data-test-id="price-summary"] .uitk-text.uitk-type-500') ||
+                               card.querySelector('[data-testid="price-summary"] .uitk-text') ||
+                               card.querySelector('.price-summary .uitk-text') ||
+                               card.querySelector('[class*="price"] [class*="daily"]') ||
+                               card.querySelector('.daily-price') ||
+                               card.querySelector('[data-testid*="price"]');
+        
+        // Si pas trouvé, chercher tout élément contenant un symbole monétaire
+        if (!dailyPriceElement) {
+            const allTextElements = card.querySelectorAll('.uitk-text, [class*="text"], [class*="price"], span, div');
+            for (const el of allTextElements) {
+                if (el.textContent && /[$€£¥]/g.test(el.textContent)) {
+                    dailyPriceElement = el;
+                    break;
+                }
+            }
+        }
+        
         const dailyPrice = dailyPriceElement ? this.cleanPrice(dailyPriceElement.textContent) : '';
 
-        // Extraire le prix total
-        const totalPriceElement = card.querySelector('[data-test-id="price-summary"] .uitk-text.uitk-type-end.uitk-type-200');
+        // Extraire le prix total (sélecteurs mis à jour)
+        const totalPriceElement = card.querySelector('[data-test-id="price-summary"] .uitk-text.uitk-type-end.uitk-type-200') ||
+                                 card.querySelector('[data-testid="price-summary"] .uitk-text:last-child') ||
+                                 card.querySelector('.price-summary .uitk-text:last-child') ||
+                                 card.querySelector('[class*="price"] [class*="total"]') ||
+                                 card.querySelector('.total-price');
         const totalPrice = totalPriceElement ? this.cleanPrice(totalPriceElement.textContent) : '';
 
-        // Extraire la compagnie de location
-        const companyImg = card.querySelector('figure.uitk-image img[alt*="Rental Company"], figure.uitk-image img[alt*="Rent A Car"]');
-        const company = companyImg ? this.extractCompanyName(companyImg.alt) : '';
+        // Extraire la compagnie de location (sélecteurs mis à jour)
+        let company = '';
+        
+        // Méthode 1: Image avec alt text
+        const companyImg = card.querySelector('figure.uitk-image img[alt*="Rental Company"], figure.uitk-image img[alt*="Rent A Car"]') ||
+                          card.querySelector('img[alt*="rental"], img[alt*="car"], img[alt*="logo"]') ||
+                          card.querySelector('figure img, .logo img, [class*="logo"] img');
+        
+        if (companyImg && companyImg.alt) {
+            company = this.extractCompanyName(companyImg.alt);
+        }
+        
+        // Méthode 2: Texte de compagnie
+        if (!company) {
+            const companyText = card.querySelector('[class*="company"], [class*="brand"], [class*="vendor"]') ||
+                               card.querySelector('[data-testid*="company"], [data-testid*="brand"]');
+            if (companyText) {
+                company = companyText.textContent.trim();
+            }
+        }
+        
+        // Méthode 3: Chercher les noms de compagnies connues dans le texte
+        if (!company) {
+            const knownCompanies = ['Hertz', 'Avis', 'Budget', 'Enterprise', 'Alamo', 'National', 'Thrifty', 'Dollar', 'Sixt', 'Europcar', 'Firefly'];
+            const cardText = card.textContent;
+            for (const knownCompany of knownCompanies) {
+                if (cardText.includes(knownCompany)) {
+                    company = knownCompany;
+                    break;
+                }
+            }
+        }
 
         // Extraire les spécifications (passagers, transmission, etc.)
         const specifications = this.extractSpecifications(card);
@@ -1136,7 +1199,17 @@ class ExpediaCarComparator {
         // Déterminer la catégorie basée sur le nom
         const category = this.determineCategory(name);
 
+        // Debug logs pour comprendre les problèmes d'extraction
+        console.log('🔍 Extraction véhicule:', {
+            name: name || 'MANQUANT',
+            company: company || 'MANQUANT',
+            dailyPrice: dailyPrice || 'MANQUANT',
+            totalPrice: totalPrice || 'MANQUANT',
+            category: category || 'MANQUANT'
+        });
+
         if (!name || !company) {
+            console.log('⚠️ Données insuffisantes pour ce véhicule, ignoré');
             return null; // Données insuffisantes
         }
 
